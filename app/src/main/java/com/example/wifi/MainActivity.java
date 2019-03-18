@@ -15,18 +15,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.database.Cursor;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.FileOutputStream;
 
 public class MainActivity extends AppCompatActivity {
 
     String ssid, ip, mac, strength, signalLevel, speed, frequency;
-    TextView details,txtfile,database;
+    TextView details,database;
     SQLiteDatabase db;
     Button analyze,checkHistory;
     String signal = null;
@@ -37,16 +30,16 @@ public class MainActivity extends AppCompatActivity {
         db = openOrCreateDatabase("WifiDB", Context.MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS details(ssid VARCHAR, strength VARCHAR, signalLevel VARCHAR, signal VARCHAR, speed VARCHAR, frequency VARCHAR, ip VARCHAR, mac VARCHAR);");
 
-        analyze = (Button) findViewById(R.id.button);
+        analyze = findViewById(R.id.button);
         analyze.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 displayDetails(v);
             }
         });
 
-        checkHistory = (Button) findViewById(R.id.button2);
+        checkHistory = findViewById(R.id.button2);
 //        txtfile=(TextView)findViewById(R.id.textView4);
-        details = (TextView) findViewById(R.id.textView);
+        details = findViewById(R.id.textView);
         //final Intent i = new Intent(MainActivity.this, HistoryActivity.class);
 
         checkHistory.setOnClickListener(new View.OnClickListener() {
@@ -74,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("WifiManagerLeak") WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 //        wifiInfo.getSSID();
-        details = (TextView)findViewById(R.id.textView);
+        details = findViewById(R.id.textView);
 
         int signal_strength = wifiInfo.getRssi();
 
@@ -99,12 +92,13 @@ public class MainActivity extends AppCompatActivity {
         mac = wifiInfo.getMacAddress();
 
         if (signal != null) {
-            String info = "SSID: " + ssid + "\nStrength: " + strength + "dBm" + "\nSignal Level: " + signalLevel + "/5" + "\nSignal Strength: " + signal + "\nSpeed: " + speed + "Mbps" + "\nFrequency: " + frequency + "\nIP Address: " + ip + "\nMAC Address: " + mac + "GHz" + "\nHidden SSID: " + wifiInfo.getHiddenSSID();
+            String info = "SSID: " + ssid + "\nStrength: " + strength + "dBm" + "\nSignal Level: " + signalLevel + "/5" + "\nSignal Strength: " + signal + "\nSpeed: " + speed + "Mbps" + "\nFrequency: " + frequency + "\nIP Address: " + ip + "\nMAC Address: " + mac + "GHz" + "\nHidden SSID: ";
             storeInDB(ssid, strength, signalLevel, signal, speed, frequency, ip, mac);
             details.setText(info);
 
-        } else
+        } else {
             details.setText("No WiFi");
+        }
 
         db.close();
     }
@@ -113,36 +107,30 @@ public class MainActivity extends AppCompatActivity {
            db.execSQL("INSERT INTO details VALUES('" + ssid + "','" + strength + "','" + signalLevel + "','" + signal + "','" + speed + "','" + frequency + "','" + ip + "','" + mac + "');");
            Toast.makeText(getApplicationContext(), "Successfully Saved", Toast.LENGTH_SHORT).show();
     }
-    StringBuffer buffer=new StringBuffer();
+
     public void display(SQLiteDatabase db){
 
         database = (TextView) findViewById(R.id.textView4);
         database.setMovementMethod(new ScrollingMovementMethod());
 
-        Cursor c=db.rawQuery("SELECT ssid FROM details", null);
-        if(c.getCount()!=0)
+        @SuppressLint("Recycle") Cursor c = db.rawQuery("SELECT * FROM details",null);
+        if(c.getCount()==0)
         {
-            c.moveToFirst();
-            while (c.moveToNext())
-                {
-                    buffer.append("ID: ").append(c.getInt(0)).append("\t\t");
-                    buffer.append("SSID: ").append(c.getString(1)).append("\t\t");
-                    buffer.append("Strength: ").append(c.getInt(2)).append("\t\t");
-//                    buffer.append("Strength"+strength);
-//                    buffer.append("SignalLevel"+signalLevel);
-//                    buffer.append("Speed"+speed);
-//                    buffer.append("Frequency"+frequency);
-//                    buffer.append("IP"+ip);
-                }
-
-
-            database.setText(buffer);
-            Toast.makeText(getApplicationContext(), "Successfully Saved",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error : No records found", Toast.LENGTH_SHORT).show();
+            return;
         }
-        else {
-
-            Toast.makeText(getApplicationContext(), "No records!",Toast.LENGTH_SHORT).show();
+        StringBuffer buffer=new StringBuffer();
+        c.moveToFirst();
+        while(c.moveToNext())
+        {
+            buffer.append("SSID: ").append(c.getString(1)).append("\t\t");
+            buffer.append("Strength: ").append(c.getString(2)).append("dBm\n");
+            //buffer.append("Signal Strength: ").append(c.getString(3)).append("\n");
+            //buffer.append("Speed: ").append(c.getString(4)).append("Mbps\n");
+            //buffer.append("Frequency: ").append(c.getString(5)).append("GHz\n");
+            //buffer.append("IP Address: ").append(c.getString(6)).append("\n");
         }
+        database.setText(buffer);
     }
 
 }
